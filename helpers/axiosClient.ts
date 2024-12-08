@@ -3,7 +3,6 @@ import axios, { AxiosResponse, InternalAxiosRequestConfig } from 'axios';
 import { router } from 'expo-router';
 import { Alert } from 'react-native';
 
-import { AsyncStorageKey } from '@/constants/AsyncStorageKey';
 import { WebRootPath } from '@/constants/WebRootPath';
 import { ErrorMsg, ErrorTitle } from '@/resources/ErrorMsg';
 import { authRoutes } from '@/routes';
@@ -21,7 +20,7 @@ const axiosClient = axios.create({
 // Request interceptor
 const onRequest = async (config: InternalAxiosRequestConfig): Promise<InternalAxiosRequestConfig> => {
   try {
-    const token = await AsyncStorage.getItem(AsyncStorageKey.userToken);
+    const token = await AsyncStorage.getItem('token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }

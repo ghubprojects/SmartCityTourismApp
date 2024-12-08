@@ -30,7 +30,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const checkAuth = async () => {
     const token = await AsyncStorage.getItem('token');
-    console.log(token);
+    console.log('check Auth', token);
     if (token) {
       const decoded: JwtPayload = jwtDecode(token);
       const username = decoded.name;

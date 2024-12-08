@@ -15,19 +15,19 @@ import {
   View,
 } from 'react-native';
 import { FlatList, GestureHandlerRootView, ScrollView } from 'react-native-gesture-handler';
-import MapView, { Callout, Marker, Region } from 'react-native-maps';
+import MapView, { Marker, Region } from 'react-native-maps';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { FullBottomSheet, HalfBottomSheet, SearchResultPlaceCard, UserInfoModal } from '@/components';
 import PlaceDetailCard from '@/components/DetailPlaceCard';
 import { WebRootPath } from '@/constants/WebRootPath';
 import { useAuth } from '@/contexts/AuthContext';
+import { CommonUtils } from '@/helpers/commonUtils';
 import { useLocation } from '@/hooks/useLocation';
 import { authRoutes } from '@/routes';
 import { placeService } from '@/services';
 import { LocationType } from '@/types/location';
 import { PlaceDetailType } from '@/types/place';
-import { CommonUtils } from '@/helpers/commonUtils';
 
 const HomeScreen: React.FC = () => {
   const router = useRouter();
@@ -49,8 +49,6 @@ const HomeScreen: React.FC = () => {
   const [placeTypes, setPlaceTypes] = useState<string[]>([]);
 
   const [distance, setDistance] = useState(2000);
-
-  console.log('render', mapType);
 
   const openGoogleMaps = (latitude: number, longitude: number) => {
     const url = `https://www.google.com/maps/dir/?api=1&destination=${latitude},${longitude}`;
@@ -132,14 +130,15 @@ const HomeScreen: React.FC = () => {
   };
 
   const handleOpenDetail = (place: PlaceDetailType) => {
+    setSelectedPlace(place);
     console.log('pressing on:', place.name);
-
     moveToLocation({ latitude: place.latitude, longitude: place.longitude });
     setIsSearchResultVisible(false);
-    setSelectedPlace(place);
   };
 
   const handleCloseDetail = () => {
+    console.log(123);
+
     setSelectedPlace(null);
     setIsSearchResultVisible(true);
   };
@@ -278,18 +277,22 @@ const HomeScreen: React.FC = () => {
               </TouchableOpacity>
             </View>
 
-            <FlatList
+            <ScrollView
               horizontal
-              data={places}
-              renderItem={({ item: place }) => (
-                <SearchResultPlaceCard
-                  place={place}
-                  isLast={places[places.length - 1] === place}
-                  onOpenDetail={() => handleOpenDetail(place)}
-                />
-              )}
+              showsHorizontalScrollIndicator={false}
               contentContainerStyle={styles.placesList}
-            />
+            >
+              {places.map((place: PlaceDetailType) => {
+                return (
+                  <SearchResultPlaceCard
+                    key={place.detailId}
+                    place={place}
+                    isLast={places[places.length - 1] === place}
+                    onOpenDetail={handleOpenDetail}
+                  />
+                );
+              })}
+            </ScrollView>
           </HalfBottomSheet>
         )}
         {selectedPlace && (
@@ -311,7 +314,7 @@ const HomeScreen: React.FC = () => {
 
             <ScrollView contentContainerStyle={styles.placeDetail}>
               <ScrollView>
-                <PlaceDetailCard place={selectedPlace} />
+                <PlaceDetailCard place={selectedPlace} onReloadPlaceList={handleSearch} />
               </ScrollView>
             </ScrollView>
           </FullBottomSheet>
@@ -425,6 +428,7 @@ const styles = StyleSheet.create({
   },
   resultsTitle: {
     fontSize: 22,
+    width: 240,
   },
   headerBtnGroup: {
     flexDirection: 'row',

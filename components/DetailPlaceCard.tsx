@@ -1,8 +1,18 @@
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { Star } from 'lucide-react-native';
-import React from 'react';
-import { Image, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import React, { useState } from 'react';
+import {
+  Alert,
+  Image,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 
 import ImageGrid from './ImageGrid';
 import { useAuth } from '@/contexts/AuthContext';
@@ -10,14 +20,55 @@ import { authRoutes } from '@/routes';
 import { WebRootPath } from '@/constants/WebRootPath';
 import { CommonUtils } from '@/helpers/commonUtils';
 import { PlaceDetailType } from '@/types/place';
+import { ErrorMsg, ErrorTitle } from '@/resources/ErrorMsg';
+import { reviewService } from '../services';
+export * as reviewService from '@/services';
 
 interface PlaceDetailCardProps {
   place: PlaceDetailType;
+  onReloadPlaceList: () => Promise<void>;
 }
 
-export default function PlaceDetailCard({ place }: PlaceDetailCardProps) {
-  const { user } = useAuth();
+export default function PlaceDetailCard({ place, onReloadPlaceList }: PlaceDetailCardProps) {
   const openingDescriptions = ['Đã đóng cửa', 'Đang mở cửa', 'Mở cả ngày', 'Chưa xác định'];
+  const { user } = useAuth();
+  const [comment, setComment] = useState('');
+  const [rating, setRating] = useState(0);
+
+  const handleAddComment = async () => {
+    console.log('111');
+
+    if (!comment) {
+      Alert.alert(ErrorTitle.default, 'Bình luận không được để trống.');
+      return;
+    }
+    if (!rating) {
+      Alert.alert(ErrorTitle.default, 'Điểm đánh giá phải nằm trong khoảng từ 1 đến 5.');
+      return;
+    }
+
+    if (user) {
+      const response = await reviewService.addReviewAsync(place.detailId, user.userId, rating, comment);
+      if (response.status == 200) {
+        Alert.alert('Thông báo', 'Thêm bình luận thành công', [
+          {
+            text: 'OK',
+            onPress: async () => {
+              await onReloadPlaceList();
+            },
+          },
+        ]);
+      } else {
+        if (response.status == 400) {
+          var data = response.data;
+          const errorMessages = `${data.detail}\n${data.errors?.map((err: any) => err.error).join('\n') || ''}`;
+          Alert.alert(ErrorTitle.default, errorMessages);
+        } else {
+          Alert.alert(ErrorTitle.default, ErrorMsg.unhandledError);
+        }
+      }
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -57,19 +108,48 @@ export default function PlaceDetailCard({ place }: PlaceDetailCardProps) {
 
         <View style={styles.reviewContainer}>
           {user ? (
-            <>
+            <View style={styles.authReviewWrapper}>
               <Text style={styles.reviewsTitle}>Xếp hạng và đánh giá</Text>
               <View style={styles.ratingInput}>
-                <Image source={{ uri: '/placeholder.svg?height=40&width=40' }} style={styles.userAvatar} />
+                <Image src={`${WebRootPath.imagePath}/${user?.avatar}`} style={[styles.reviewerAvatar]} />
                 <View style={styles.starsInput}>
-                  {[1, 2, 3, 4, 5].map((i) => (
-                    <TouchableOpacity key={i}>
-                      <Ionicons name="star-outline" size={32} color="#666" />
-                    </TouchableOpacity>
-                  ))}
+                  {rating ? (
+                    <>
+                      {[...Array(rating)].map((_, index) => (
+                        <TouchableOpacity key={`filled-${index}`} onPress={() => setRating(index + 1)}>
+                          <Ionicons name="star" size={32} color="#FFD700" />
+                        </TouchableOpacity>
+                      ))}
+                      {[...Array(5 - rating)].map((_, index) => (
+                        <TouchableOpacity
+                          key={`outline-${index}`}
+                          onPress={() => setRating(rating + index + 1)}
+                        >
+                          <Ionicons name="star-outline" size={32} color="#FFD700" />
+                        </TouchableOpacity>
+                      ))}
+                    </>
+                  ) : (
+                    [1, 2, 3, 4, 5].map((i) => (
+                      <TouchableOpacity key={i} onPress={() => setRating(i)}>
+                        <Ionicons name="star-outline" size={32} color="#70757A" />
+                      </TouchableOpacity>
+                    ))
+                  )}
                 </View>
               </View>
-            </>
+              <View style={styles.commentWrapper}>
+                <TextInput
+                  style={styles.commentInput}
+                  placeholder="Nhập bình luận..."
+                  value={comment}
+                  onChangeText={setComment}
+                />
+                <Pressable style={styles.loginButton} onPress={handleAddComment}>
+                  <Text style={styles.loginText}>Gửi</Text>
+                </Pressable>
+              </View>
+            </View>
           ) : (
             <View style={styles.noAuthReviewWrapper}>
               <Text style={styles.reviewsTitle}>Xếp hạng và đánh giá</Text>
@@ -103,11 +183,11 @@ export default function PlaceDetailCard({ place }: PlaceDetailCardProps) {
 
                   <View style={styles.ratingContainer22}>
                     <View style={styles.stars}>
-                      {[...Array(item.rating)].map((i) => (
-                        <Ionicons key={i} name="star" size={16} color="#FFD700" />
+                      {[...Array(item.rating)].map((_, index) => (
+                        <Ionicons key={`filled-${index}`} name="star" size={16} color="#FFD700" />
                       ))}
-                      {[...Array(5 - item.rating)].map((i) => (
-                        <Ionicons key={i} name="star-outline" size={16} color="#FFD700" />
+                      {[...Array(5 - item.rating)].map((_, index) => (
+                        <Ionicons key={`outline-${index}`} name="star-outline" size={16} color="#FFD700" />
                       ))}
                     </View>
                     <Text style={styles.timeAgo}>{CommonUtils.formatDate(item.lastModifiedDate)}</Text>
@@ -143,6 +223,7 @@ const styles = StyleSheet.create({
   group2: {
     backgroundColor: '#fff',
     paddingHorizontal: 20,
+    width: 330,
   },
   group3: {
     backgroundColor: '#fff',
@@ -335,6 +416,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 8,
   },
+  commentWrapper: {
+    flexDirection: 'row',
+  },
+  commentInput: {
+    flex: 1,
+    fontSize: 16,
+    marginHorizontal: 8,
+  },
+  // Auth review section
+  authReviewWrapper: {},
   // No auth review section
   noAuthReviewWrapper: {},
   noAuthReview: {
@@ -427,6 +518,7 @@ const styles = StyleSheet.create({
   reviewText: {
     fontSize: 14,
     lineHeight: 20,
+    color: '#70757A',
   },
   reviewImage: {
     width: '100%',

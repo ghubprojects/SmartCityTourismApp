@@ -1,6 +1,6 @@
 import { Menu, Navigation2, Star } from 'lucide-react-native';
-import { Alert, Image, Linking, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { ScrollView } from 'react-native-gesture-handler';
+import { Alert, Image, Linking, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView } from 'react-native-gesture-handler';
 
 import { WebRootPath } from '@/constants/WebRootPath';
 import { CommonUtils } from '@/helpers/commonUtils';
@@ -9,7 +9,7 @@ import { PlaceDetailType } from '@/types/place';
 interface SearchResultPlaceCardProps {
   place: PlaceDetailType;
   isLast: boolean;
-  onOpenDetail: () => void;
+  onOpenDetail: (place: PlaceDetailType) => void;
 }
 
 export default function SearchResultPlaceCard({ place, isLast, onOpenDetail }: SearchResultPlaceCardProps) {
@@ -20,6 +20,12 @@ export default function SearchResultPlaceCard({ place, isLast, onOpenDetail }: S
     Linking.openURL(url).catch(() => {
       Alert.alert('Lỗi', 'Không thể mở Google Maps');
     });
+  };
+
+  const handleOpenDetail = () => {
+    console.log(place.name);
+
+    onOpenDetail(place);
   };
 
   return (
@@ -36,7 +42,7 @@ export default function SearchResultPlaceCard({ place, isLast, onOpenDetail }: S
         })}
       </ScrollView>
 
-      <TouchableOpacity style={styles.content} onPress={onOpenDetail}>
+      <Pressable style={styles.content} onPress={handleOpenDetail}>
         <Text numberOfLines={1} style={styles.title}>
           {place.name ?? 'Unknown'}
         </Text>
@@ -59,20 +65,17 @@ export default function SearchResultPlaceCard({ place, isLast, onOpenDetail }: S
           <Text style={styles.dot}> · </Text>
           <Text style={styles.openTime}>{place.openingHours}</Text>
         </View>
-      </TouchableOpacity>
+      </Pressable>
 
       <View style={styles.actions}>
-        <TouchableOpacity style={styles.actionButton} onPress={onOpenDetail}>
+        <Pressable style={styles.actionButton} onPress={handleOpenDetail}>
           <Menu size={16} color="#1A73E8" />
           <Text style={styles.actionText}>Chi tiết</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.actionButton}
-          onPress={() => openGoogleMaps(place.latitude, place.longitude)}
-        >
+        </Pressable>
+        <Pressable style={styles.actionButton} onPress={() => openGoogleMaps(place.latitude, place.longitude)}>
           <Navigation2 size={16} color="#1A73E8" />
           <Text style={styles.actionText}>Chỉ đường</Text>
-        </TouchableOpacity>
+        </Pressable>
       </View>
     </View>
   );

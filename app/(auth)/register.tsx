@@ -4,6 +4,7 @@ import { Alert, Button, StyleSheet, Text, TextInput, View, Image } from 'react-n
 
 import { useAuth } from '@/contexts/AuthContext';
 import { appRoutes, authRoutes } from '@/routes';
+import { ErrorMsg, ErrorTitle } from '@/resources/ErrorMsg';
 
 export default function RegisterScreen() {
   const router = useRouter();
@@ -29,11 +30,14 @@ export default function RegisterScreen() {
         Alert.alert('Thông báo', 'Đăng ký thất bại');
       }
     } catch (error: any) {
-      const errorTitle = error.response.data.detail;
-      const errorMessages = error.response.data.errors
-        .map((err: any) => `${err.property}: ${err.error}`)
-        .join('\n');
-      Alert.alert(errorTitle, errorMessages);
+      const response = error.response;
+      if (response.status == 400) {
+        var data = response.data;
+        const errorMessages = `${data.detail}\n${data.errors?.map((err: any) => err.error).join('\n') || ''}`;
+        Alert.alert(ErrorTitle.default, errorMessages);
+      } else {
+        Alert.alert(ErrorTitle.default, ErrorMsg.unhandledError);
+      }
     }
   };
 

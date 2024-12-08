@@ -49,11 +49,11 @@ const UserInfoModal: React.FC<UserInfoModalProps> = ({
               style={styles.distancePicker}
               onValueChange={handleDistanceChange}
             >
+              <Picker.Item label="500 m" value={500} />
               <Picker.Item label="1 km" value={1000} />
               <Picker.Item label="2 km" value={2000} />
               <Picker.Item label="5 km" value={5000} />
               <Picker.Item label="10 km" value={10000} />
-              <Picker.Item label="20 km" value={20000} />
             </Picker>
           </View>
           {userInfo ? (
